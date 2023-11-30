@@ -1,15 +1,13 @@
-import { client } from "../../index.js";
+import { client, qrCode } from "../../index.js";
+import QRCode from "qrcode";
 
 // Use an object to store information about users
 const userMap = {};
 
 function reply() {
   client.on("message", (message) => {
-    console.log(message);
-
     // Extracting sender's ID
     const clientID = message.from;
-    console.log("usermap", userMap[clientID]);
     // Check if it's the first time the user is sending a message
     if (!userMap[clientID]) {
       // Set a flag to indicate that the user has sent a message
@@ -40,4 +38,9 @@ function handleMessage(message) {
   // Add more message handling cases if needed
 }
 
-export { reply };
+async function displayQR(req, res) {
+  const qrImage = await QRCode.toBuffer(qrCode, { type: "png" });
+  res.setHeader("Content-Type", "image/png");
+  res.send(qrImage);
+}
+export { reply, displayQR };
