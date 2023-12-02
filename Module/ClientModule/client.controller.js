@@ -1,5 +1,32 @@
-import { client, qrCode } from "../../index.js";
 import QRCode from "qrcode";
+import qrcode from "qrcode-terminal";
+import pkg from "whatsapp-web.js";
+const { Client } = pkg;
+let qrCode;
+let client;
+
+function createClient() {
+  client = new Client();
+  console.log("client.info", client.info);
+  client.on("qr", (qr) => {
+    if (client.info) return;
+    qrCode = qr;
+    qrcode.generate(qr, { small: true });
+  });
+
+  client.on("ready", () => {
+    console.log("Whatsapp Paired!");
+    reply();
+  });
+
+  client.on("disconnected", () => {
+    console.log("Whatsapp disconnect!");
+
+    createClient();
+  });
+
+  client.initialize();
+}
 
 // Use an object to store information about users
 const userMap = {};
@@ -44,4 +71,4 @@ async function displayQR(req, res) {
   res.send(qrImage);
 }
 
-export { reply, displayQR };
+export { createClient, displayQR };
