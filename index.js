@@ -25,35 +25,31 @@ if (fs.existsSync(SESSION_FILE_PATH)) {
 let qrCode;
 let client;
 
-function createClient(){
+function createClient() {
   client = new Client();
-  console.log( "client.info",client.info);
+  console.log("client.info", client.info);
   client.on("qr", (qr) => {
     if (client.info) return;
     qrCode = qr;
     qrcode.generate(qr, { small: true });
   });
-  
+
   client.on("ready", () => {
     console.log("Whatsapp Paired!");
     reply();
   });
-  
-  client.on("disconnected",()=>{
+
+  client.on("disconnected", () => {
     console.log("Whatsapp disconnect!");
-    
-    createClient()
-    
-  })
-  
+
+    createClient();
+  });
+
   client.initialize();
 }
-createClient()
+createClient();
 
-
-
-
-server.listen(8000, () => {
+server.listen(process.env.PORT || 8000, () => {
   console.log("Server Started");
 });
 

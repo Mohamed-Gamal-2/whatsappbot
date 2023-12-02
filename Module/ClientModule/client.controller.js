@@ -43,4 +43,5 @@ async function displayQR(req, res) {
   res.setHeader("Content-Type", "image/png");
   res.send(qrImage);
 }
+
 export { reply, displayQR };
