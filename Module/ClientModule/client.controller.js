@@ -8,7 +8,12 @@ let qrCode;
 let client;
 
 function createClient() {
-  client = new Client();
+  client = new Client({
+    puppeteer: {
+      executablePath:
+        "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+    },
+  });
   console.log("client.info", client.info);
   client.on("qr", (qr) => {
     if (client.info) return;
@@ -29,8 +34,6 @@ function createClient() {
 
   client.initialize();
 }
-
-
 
 async function displayQR(req, res) {
   const qrImage = await QRCode.toBuffer(qrCode, { type: "png" });
