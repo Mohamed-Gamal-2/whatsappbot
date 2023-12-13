@@ -1,69 +1,6 @@
 import replyModel from "../../Database/Schema/replySchema.js";
-import { client } from "../ClientModule/client.controller.js";
-import fs from "fs";
-import pkg from "whatsapp-web.js";
 import { fileName as filename } from "../../middleware/middleware.upload.js";
-const userMap = {};
 
-const { MessageMedia } = pkg;
-
-function reply() {
-  client.on("message", (message) => {
-    // Extracting sender's ID
-    const clientID = message.from;
-    // Check if it's the first time the user is sending a message
-    if (!userMap[clientID]) {
-      // Set a flag to indicate that the user has sent a message
-      userMap[clientID] = true;
-
-      // Send the initial message for the first interaction
-      client.sendMessage(
-        clientID,
-        "Hello! This is your first message. How can I assist you?"
-      );
-      return;
-    }
-
-    // Process other messages
-    handleMessage(message);
-  });
-}
-
-async function handleMessage(message) {
-  const msg = await replyModel.findOne({ message: message.body });
-  const PDFRegex = /\.PDF$/i;
-  const imageRegex =
-    /\.(PNG|JPEG|JPG|GIF|TIFF|TIF|BMP|SVG|WEBP|ICO|RAW|PSD|EPS|AI)$/i;
-  const VideoRegex = /\.(MP4|AVI|MKV|WMV|MOV|FLV|MPEG|WEBM|OGV|MPG)$/i;
-  if (msg) {
-    if (PDFRegex.test(msg.reply)) {
-      const dataBuffer = fs.readFileSync(`./media/${msg.reply}`);
-      const base64PDF = dataBuffer.toString("base64");
-      const media = new MessageMedia("application/pdf", base64PDF);
-      client.sendMessage(message.from, media);
-    } else if (imageRegex.test(msg.reply)) {
-      const dataBuffer = fs.readFileSync(`./media/${msg.reply}`);
-      const base64Image = dataBuffer.toString("base64");
-      const media = new MessageMedia(
-        `image/${msg.reply.slice(msg.reply.lastIndexOf("."))}`,
-        base64Image
-      );
-      client.sendMessage(message.from, media);
-    } else if (VideoRegex.test(msg.reply)) {
-      const dataBuffer = fs.readFileSync(`./media/${msg.reply}`);
-      const base64video = dataBuffer.toString("base64");
-      const media = new MessageMedia(
-        `video/${msg.reply.slice(msg.reply.lastIndexOf("."))}`,
-        base64video
-      );
-      client.sendMessage(message.from, media);
-    } else {
-      message.reply(msg.reply);
-    }
-  } else {
-    client.sendMessage(message.from, "please, choose option form list");
-  }
-}
 async function addReply(req, res) {
   try {
     if (!filename) {
@@ -120,4 +57,4 @@ async function getAllreplies(req, res) {
   }
 }
 
-export { reply, addReply, updateReply, getAllreplies };
+export { addReply, updateReply, getAllreplies };

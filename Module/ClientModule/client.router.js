@@ -1,8 +1,9 @@
 import express from "express";
-import { displayQR } from "./client.controller.js";
+import { createClient, displayQR } from "./client.controller.js";
 
 const clientRouter = express.Router();
 
 clientRouter.get("/", displayQR);
+clientRouter.post("/newClient", createClient);
 
 export { clientRouter };
