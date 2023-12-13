@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import path from "path"
 import { addReply, getAllreplies, updateReply } from "./reply.controller.js";
+import { validateHeaderName } from "http";
 
 
 const replyRouter = express.Router();
@@ -14,7 +15,9 @@ const storage = multer.diskStorage({
   filename: function (req, file, cb) {
     cb(null, new Date().toISOString().replace(/:/g,"-") + file.originalname);
   },
+  description
 });
+
 
 const uploadMedia = multer({ storage });
 
