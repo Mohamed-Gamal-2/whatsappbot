@@ -3,7 +3,7 @@ import multer from "multer";
 import path from "path"
 import { addReply, getAllreplies, updateReply } from "./reply.controller.js";
 import { validateHeaderName } from "http";
-
+import { uploadingMediaMW } from "../../middleware/middleware.upload.js";
 
 const replyRouter = express.Router();
 
@@ -17,15 +17,10 @@ const storage = multer.diskStorage({
   },
   description
 });
-
-
 const uploadMedia = multer({ storage });
-
-replyRouter.post("/add", addReply);
+replyRouter.post("/add", uploadingMediaMW, addReply);
 replyRouter.patch("/update", updateReply);
 replyRouter.get("/all", getAllreplies);
-replyRouter.post("/upload", uploadMedia.single("media"), (req, res) => {
-  res.status(200).json({ message: "media uploaded" });
-});
+// replyRouter.post("/upload", uploadMedia.single("media"), uploadingMedia);
 
 export { replyRouter };
