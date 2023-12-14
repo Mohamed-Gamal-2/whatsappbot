@@ -1,18 +1,20 @@
 import mongoose from "mongoose";
 
 const replySchema = new mongoose.Schema({
-    reply: {
-        type: String,
-        required:true
-    },
-    message:{
-        type: String,
-        required:true,
-        unique:true
-    }
-
+  userId: {
+    type: String,
+    required: true,
+  },
+  reply: {
+    type: String,
+    required: true,
+  },
+  message: {
+    type: String,
+    required: true,
+  },
 });
 
 const replyModel = mongoose.model("Reply", replySchema);
 
-export default replyModel ;
+export default replyModel;

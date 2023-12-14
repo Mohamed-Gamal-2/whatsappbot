@@ -26,14 +26,9 @@ function createClient(req, res) {
   });
 
   users[id].on("message", (message) => {
-    // Extracting sender's ID
     const clientID = message.from;
-    // Check if it's the first time the user is sending a message
     if (!userMap[clientID]) {
-      // Set a flag to indicate that the user has sent a message
       userMap[clientID] = true;
-
-      // Send the initial message for the first interaction
       users[id].sendMessage(
         clientID,
         "Hello! This is your first message. How can I assist you?"
@@ -41,8 +36,7 @@ function createClient(req, res) {
       return;
     }
 
-    // Process other messages
-    handleMessage(message, users[id]);
+    handleMessage(message, users[id], id);
   });
 
   users[id].on("disconnected", () => {
@@ -58,8 +52,8 @@ async function displayQR(req, res) {
   res.send(qrImage);
 }
 
-async function handleMessage(message, usersID) {
-  const msg = await replyModel.findOne({ message: message.body });
+async function handleMessage(message, usersID, id) {
+  const msg = await replyModel.findOne({ message: message.body, userId: id });
   const PDFRegex = /\.PDF$/i;
   const imageRegex =
     /\.(PNG|JPEG|JPG|GIF|TIFF|TIF|BMP|SVG|WEBP|ICO|RAW|PSD|EPS|AI)$/i;
