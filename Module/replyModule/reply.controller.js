@@ -11,12 +11,8 @@ function reply() {
   client.on("message", (message) => {
     // Extracting sender's ID
     const clientID = message.from;
-    // Check if it's the first time the user is sending a message
     if (!userMap[clientID]) {
-      // Set a flag to indicate that the user has sent a message
       userMap[clientID] = true;
-
-      // Send the initial message for the first interaction
       client.sendMessage(
         clientID,
         "Hello! This is your first message. How can I assist you?"

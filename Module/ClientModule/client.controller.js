@@ -2,6 +2,7 @@ import QRCode from "qrcode";
 import qrcode from "qrcode-terminal";
 import pkg from "whatsapp-web.js";
 import { reply } from "../replyModule/reply.controller.js";
+import path, { resolve } from "path";
 
 const { Client } = pkg;
 let qrCode;
@@ -9,10 +10,7 @@ let client;
 
 function createClient() {
   client = new Client({
-    puppeteer: {
-      executablePath:
-        "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
-    },
+   
   });
   console.log("client.info", client.info);
   client.on("qr", (qr) => {
