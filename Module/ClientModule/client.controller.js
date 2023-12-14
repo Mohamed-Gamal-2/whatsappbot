@@ -1,36 +1,55 @@
 import QRCode from "qrcode";
 import qrcode from "qrcode-terminal";
 import pkg from "whatsapp-web.js";
-import { reply } from "../replyModule/reply.controller.js";
-import path, { resolve } from "path";
+import fs from "fs";
+import replyModel from "../../Database/Schema/replySchema.js";
 
-const { Client } = pkg;
+
+const { Client, LocalAuth, MessageMedia } = pkg;
 let qrCode;
-let client;
-
-function createClient() {
-  client = new Client({
-   
+const users = {};
+const userMap = {};
+function createClient(req, res) {
+  const { id } = req.body;
+  users[id] = new Client({
+    authStrategy: new LocalAuth({ clientId: id }),
   });
-  console.log("client.info", client.info);
-  client.on("qr", (qr) => {
-    if (client.info) return;
+
+  users[id].on("qr", (qr) => {
     qrCode = qr;
     qrcode.generate(qr, { small: true });
+    res.json({ msg: "Client Created" });
   });
 
-  client.on("ready", () => {
-    console.log("Whatsapp Paired!");
-    reply();
+  users[id].on("ready", () => {
+    console.log(`${id}'s Whatsapp Paired!`);
   });
 
-  client.on("disconnected", () => {
-    console.log("Whatsapp disconnect!");
+  users[id].on("message", (message) => {
+    // Extracting sender's ID
+    const clientID = message.from;
+    // Check if it's the first time the user is sending a message
+    if (!userMap[clientID]) {
+      // Set a flag to indicate that the user has sent a message
+      userMap[clientID] = true;
 
-    createClient();
+      // Send the initial message for the first interaction
+      users[id].sendMessage(
+        clientID,
+        "Hello! This is your first message. How can I assist you?"
+      );
+      return;
+    }
+
+    // Process other messages
+    handleMessage(message, users[id]);
   });
 
-  client.initialize();
+  users[id].on("disconnected", () => {
+    console.log(`${id}'s Whatsapp disconnect!`);
+  });
+
+  users[id].initialize();
 }
 
 async function displayQR(req, res) {
@@ -39,4 +58,40 @@ async function displayQR(req, res) {
   res.send(qrImage);
 }
 
-export { createClient, client, displayQR };
+async function handleMessage(message, usersID) {
+  const msg = await replyModel.findOne({ message: message.body });
+  const PDFRegex = /\.PDF$/i;
+  const imageRegex =
+    /\.(PNG|JPEG|JPG|GIF|TIFF|TIF|BMP|SVG|WEBP|ICO|RAW|PSD|EPS|AI)$/i;
+  const VideoRegex = /\.(MP4|AVI|MKV|WMV|MOV|FLV|MPEG|WEBM|OGV|MPG)$/i;
+  if (msg) {
+    if (PDFRegex.test(msg.reply)) {
+      const dataBuffer = fs.readFileSync(`./media/${msg.reply}`);
+      const base64PDF = dataBuffer.toString("base64");
+      const media = new MessageMedia("application/pdf", base64PDF);
+      usersID.sendMessage(message.from, media);
+    } else if (imageRegex.test(msg.reply)) {
+      const dataBuffer = fs.readFileSync(`./media/${msg.reply}`);
+      const base64Image = dataBuffer.toString("base64");
+      const media = new MessageMedia(
+        `image/${msg.reply.slice(msg.reply.lastIndexOf("."))}`,
+        base64Image
+      );
+      usersID.sendMessage(message.from, media);
+    } else if (VideoRegex.test(msg.reply)) {
+      const dataBuffer = fs.readFileSync(`./media/${msg.reply}`);
+      const base64video = dataBuffer.toString("base64");
+      const media = new MessageMedia(
+        `video/${msg.reply.slice(msg.reply.lastIndexOf("."))}`,
+        base64video
+      );
+      usersID.sendMessage(message.from, media);
+    } else {
+      message.reply(msg.reply);
+    }
+  } else {
+    usersID.sendMessage(message.from, "please, choose option form list");
+  }
+}
+
+export { createClient, displayQR };
