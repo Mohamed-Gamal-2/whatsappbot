@@ -4,7 +4,6 @@ import pkg from "whatsapp-web.js";
 import fs from "fs";
 import replyModel from "../../Database/Schema/replySchema.js";
 
-
 const { Client, LocalAuth, MessageMedia } = pkg;
 let qrCode;
 const users = {};
