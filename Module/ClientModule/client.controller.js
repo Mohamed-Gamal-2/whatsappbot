@@ -4,11 +4,11 @@ import pkg from "whatsapp-web.js";
 import fs from "fs";
 import replyModel from "../../Database/Schema/replySchema.js";
 
+
 const { Client, LocalAuth, MessageMedia } = pkg;
 let qrCode;
 const users = {};
 const userMap = {};
-
 function createClient(req, res) {
   const { id } = req.body;
   users[id] = new Client({

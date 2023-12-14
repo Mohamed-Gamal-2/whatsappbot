@@ -9,6 +9,7 @@ const server = express();
 
 server.use(express.json());
 server.use(cors());
+
 server.use(clientRouter);
 server.use(replyRouter);
 
