@@ -3,14 +3,21 @@ import qrcode from "qrcode-terminal";
 import pkg from "whatsapp-web.js";
 import fs from "fs";
 import replyModel from "../../Database/Schema/replySchema.js";
+import path from "path";
 
 const { Client, LocalAuth, MessageMedia } = pkg;
 let qrCode;
 const users = {};
 const userMap = {};
-function createClient(req, res) {
+async function createClient(req, res) {
   const { id } = req.body;
   users[id] = new Client({
+    puppeteer: {
+      executablePath: path.resolve(
+        "../../whatsapp bot/whatsappbot/Chrome/Application/chrome.exe"
+      ),
+    },
+    headless: true,
     authStrategy: new LocalAuth({ clientId: id }),
   });
 
@@ -22,6 +29,7 @@ function createClient(req, res) {
 
   users[id].on("ready", () => {
     console.log(`${id}'s Whatsapp Paired!`);
+    res.json({ msg: "Whatsapp Paired!" });
   });
 
   users[id].on("message", (message) => {
@@ -46,6 +54,7 @@ function createClient(req, res) {
 }
 
 async function displayQR(req, res) {
+  console.log("QR");
   const qrImage = await QRCode.toBuffer(qrCode, { type: "png" });
   res.setHeader("Content-Type", "image/png");
   res.send(qrImage);
