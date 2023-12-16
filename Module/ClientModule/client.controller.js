@@ -3,6 +3,7 @@ import qrcode from "qrcode-terminal";
 import pkg from "whatsapp-web.js";
 import fs from "fs";
 import replyModel from "../../Database/Schema/replySchema.js";
+import clientModel from "../../Database/Schema/clientSchema.js";
 import path from "path";
 
 const { Client, LocalAuth, MessageMedia } = pkg;
@@ -11,12 +12,19 @@ const users = {};
 const userMap = {};
 async function createClient(req, res) {
   const { id } = req.body;
+  let client = await clientModel.findOne({ userId: id });
+
+  if (!client) {
+    client = await clientModel.findOne({ userId: id });
+    clientModel.insertMany([{ userId: id, isLoggedIn: false }]);
+  }
+  console.log(client);
   users[id] = new Client({
-    puppeteer: {
-      executablePath: path.resolve(
-        "../../whatsapp bot/whatsappbot/Chrome/Application/chrome.exe"
-      ),
-    },
+    // puppeteer: {
+    //   executablePath: path.resolve(
+    //     "../../whatsapp bot/whatsappbot/Chrome/Application/chrome.exe"
+    //   ),
+    // },
     headless: true,
     authStrategy: new LocalAuth({ clientId: id }),
   });
@@ -28,18 +36,24 @@ async function createClient(req, res) {
   });
 
   users[id].on("ready", () => {
+    login(id);
     console.log(`${id}'s Whatsapp Paired!`);
-    res.json({ msg: "Whatsapp Paired!" });
   });
+
+  const msg = await replyModel.findOne({ message: "Early bird", userId: id });
 
   users[id].on("message", (message) => {
     const clientID = message.from;
     if (!userMap[clientID]) {
       userMap[clientID] = true;
-      users[id].sendMessage(
-        clientID,
-        "Hello! This is your first message. How can I assist you?"
-      );
+      if (msg) {
+        users[id].sendMessage(clientID, msg.reply);
+      } else {
+        users[id].sendMessage(
+          clientID,
+          "Hello! This is your first message. How can I assist you?"
+        );
+      }
       return;
     }
 
@@ -48,9 +62,59 @@ async function createClient(req, res) {
 
   users[id].on("disconnected", () => {
     console.log(`${id}'s Whatsapp disconnect!`);
+    logout(id);
   });
 
   users[id].initialize();
+}
+
+async function restoreSessions() {
+  let clients = await clientModel.find({ isLoggedIn: true });
+  clients.forEach((client) => {
+    console.log(client);
+    users[client.userId] = new Client({
+      // puppeteer: {
+      //   executablePath: path.resolve(
+      //     "../../whatsapp bot/whatsappbot/Chrome/Application/chrome.exe"
+      //   ),
+      // },
+      headless: true,
+      authStrategy: new LocalAuth({ clientId: client.userId }),
+    });
+
+    users[client.userId].on("ready", () => {
+      console.log(`${client.userId} Whatsapp Paired!`);
+    });
+
+    users[client.userId].on("message", async (message) => {
+      const msg = await replyModel.findOne({
+        message: "Early bird",
+        userId: client.userId,
+      });
+      const clientID = message.from;
+      if (!userMap[clientID]) {
+        userMap[clientID] = true;
+        if (msg) {
+          users[id].sendMessage(clientID, msg.reply);
+        } else {
+          users[client.userId].sendMessage(
+            clientID,
+            "Hello! This is your first message. How can I assist you?"
+          );
+        }
+        return;
+      }
+
+      handleMessage(message, users[client.userId], client.userId);
+    });
+
+    users[client.userId].on("disconnected", () => {
+      console.log(`${client.userId}'s Whatsapp disconnect!`);
+      logout(client.userId);
+    });
+
+    users[client.userId].initialize();
+  });
 }
 
 async function displayQR(req, res) {
@@ -92,8 +156,33 @@ async function handleMessage(message, usersID, id) {
       message.reply(msg.reply);
     }
   } else {
-    usersID.sendMessage(message.from, "please, choose option form list");
+    const LateOwl = await replyModel.findOne({
+      message: "Late Owl",
+      userId: id,
+    });
+    if (LateOwl) {
+      usersID.sendMessage(message.from, LateOwl.reply);
+    } else {
+      usersID.sendMessage(message.from, "please, choose option form list");
+    }
   }
 }
 
-export { createClient, displayQR };
+async function logout(id) {
+  const user = await clientModel.findOneAndUpdate(
+    { userId: id },
+    { isLoggedIn: false },
+    { new: true }
+  );
+  console.log(user);
+}
+async function login(id) {
+  const user = await clientModel.findOneAndUpdate(
+    { userId: id },
+    { isLoggedIn: true },
+    { new: true }
+  );
+  console.log(user);
+}
+
+export { createClient, displayQR, restoreSessions };
