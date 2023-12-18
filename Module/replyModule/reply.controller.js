@@ -16,11 +16,17 @@ async function addReply(req, res) {
     }
 
     if (!filename) {
-      const reply = await replyModel.insertMany([req.body]);
+      const reply = await replyModel.insertMany([
+        { ...req.body, message: req.body.message.toLowerCase() },
+      ]);
       res.json({ message: "reply added", reply });
     } else {
       const reply = await replyModel.insertMany([
-        { reply: filename, message: req.body.message, userId: req.body.userId },
+        {
+          reply: filename,
+          message: req.body.message.toLowerCase(),
+          userId: req.body.userId,
+        },
       ]);
       res.status(200).json({ message: "media uploaded" });
     }
@@ -37,14 +43,14 @@ async function updateReply(req, res) {
       res.json({ message: " Enter your message" });
     } else {
       const updatedReply = await replyModel.findOneAndUpdate(
-        { message, userId },
+        { message: message.toLowerCase(), userId },
         { reply },
         { new: true }
       );
       if (!updatedReply) {
         res.json({ message: "message not found" });
       }
-      res.json({ message: "7mo", updatedReply });
+      res.json({ message: "Reply updated", updatedReply });
     }
   } catch (error) {
     res.json({ message: "error", error });

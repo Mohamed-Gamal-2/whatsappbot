@@ -5,13 +5,16 @@ import fs from "fs";
 import replyModel from "../../Database/Schema/replySchema.js";
 import clientModel from "../../Database/Schema/clientSchema.js";
 import path from "path";
+import * as ChromeLauncher from "chrome-launcher";
 
 const { Client, LocalAuth, MessageMedia } = pkg;
 let qrCode;
 const users = {};
 const userMap = {};
+let executablePath;
 async function createClient(req, res) {
   const { id } = req.body;
+  executablePath = ChromeLauncher.getChromePath();
   let client = await clientModel.findOne({ userId: id });
 
   if (!client) {
@@ -20,11 +23,9 @@ async function createClient(req, res) {
   }
   console.log(client);
   users[id] = new Client({
-    // puppeteer: {
-    //   executablePath: path.resolve(
-    //     "../../whatsapp bot/whatsappbot/Chrome/Application/chrome.exe"
-    //   ),
-    // },
+    puppeteer: {
+      executablePath: executablePath,
+    },
     headless: true,
     authStrategy: new LocalAuth({ clientId: id }),
   });
@@ -40,7 +41,7 @@ async function createClient(req, res) {
     console.log(`${id}'s Whatsapp Paired!`);
   });
 
-  const msg = await replyModel.findOne({ message: "Early bird", userId: id });
+  const msg = await replyModel.findOne({ message: "early bird", userId: id });
 
   users[id].on("message", (message) => {
     const clientID = message.from;
@@ -69,15 +70,14 @@ async function createClient(req, res) {
 }
 
 async function restoreSessions() {
+  executablePath = ChromeLauncher.getChromePath();
   let clients = await clientModel.find({ isLoggedIn: true });
   clients.forEach((client) => {
     console.log(client);
     users[client.userId] = new Client({
-      // puppeteer: {
-      //   executablePath: path.resolve(
-      //     "../../whatsapp bot/whatsappbot/Chrome/Application/chrome.exe"
-      //   ),
-      // },
+      puppeteer: {
+        executablePath: executablePath,
+      },
       headless: true,
       authStrategy: new LocalAuth({ clientId: client.userId }),
     });
@@ -88,7 +88,7 @@ async function restoreSessions() {
 
     users[client.userId].on("message", async (message) => {
       const msg = await replyModel.findOne({
-        message: "Early bird",
+        message: "early bird",
         userId: client.userId,
       });
       const clientID = message.from;
@@ -125,7 +125,10 @@ async function displayQR(req, res) {
 }
 
 async function handleMessage(message, usersID, id) {
-  const msg = await replyModel.findOne({ message: message.body, userId: id });
+  const msg = await replyModel.findOne({
+    message: message.body.toLowerCase(),
+    userId: id,
+  });
   const PDFRegex = /\.PDF$/i;
   const imageRegex =
     /\.(PNG|JPEG|JPG|GIF|TIFF|TIF|BMP|SVG|WEBP|ICO|RAW|PSD|EPS|AI)$/i;
@@ -157,7 +160,7 @@ async function handleMessage(message, usersID, id) {
     }
   } else {
     const LateOwl = await replyModel.findOne({
-      message: "Late Owl",
+      message: "late owl",
       userId: id,
     });
     if (LateOwl) {
