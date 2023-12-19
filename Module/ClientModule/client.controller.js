@@ -95,7 +95,7 @@ async function restoreSessions() {
       if (!userMap[clientID]) {
         userMap[clientID] = true;
         if (msg) {
-          users[id].sendMessage(clientID, msg.reply);
+          users[client.userId].sendMessage(clientID, msg.reply);
         } else {
           users[client.userId].sendMessage(
             clientID,
