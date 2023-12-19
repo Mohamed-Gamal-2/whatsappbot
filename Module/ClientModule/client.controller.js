@@ -14,7 +14,7 @@ const lastMsg = [];
 let executablePath;
 async function createClient(req, res) {
   const { id } = req.body;
-  executablePath = ChromeLauncher.getChromePath();
+  // executablePath = ChromeLauncher.getChromePath();
   let client = await clientModel.findOne({ userId: id });
 
   if (!client) {
@@ -70,7 +70,7 @@ async function createClient(req, res) {
 }
 
 async function restoreSessions() {
-  executablePath = ChromeLauncher.getChromePath();
+  // executablePath = ChromeLauncher.getChromePath();
   let clients = await clientModel.find({ isLoggedIn: true });
   clients.forEach((client) => {
     console.log(client);
