@@ -4,7 +4,6 @@ import pkg from "whatsapp-web.js";
 import fs from "fs";
 import replyModel from "../../Database/Schema/replySchema.js";
 import clientModel from "../../Database/Schema/clientSchema.js";
-import path from "path";
 import * as ChromeLauncher from "chrome-launcher";
 
 const { Client, LocalAuth, MessageMedia } = pkg;
@@ -24,9 +23,9 @@ async function createClient(req, res) {
   }
   console.log(client);
   users[id] = new Client({
-    puppeteer: {
-      executablePath: executablePath,
-    },
+    // puppeteer: {
+    //   executablePath: executablePath,
+    // },
     headless: true,
     authStrategy: new LocalAuth({ clientId: id }),
   });
@@ -76,9 +75,9 @@ async function restoreSessions() {
   clients.forEach((client) => {
     console.log(client);
     users[client.userId] = new Client({
-      puppeteer: {
-        executablePath: executablePath,
-      },
+      // puppeteer: {
+      //   executablePath: executablePath,
+      // },
       headless: true,
       authStrategy: new LocalAuth({ clientId: client.userId }),
     });
