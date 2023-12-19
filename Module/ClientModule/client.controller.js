@@ -11,6 +11,7 @@ const { Client, LocalAuth, MessageMedia } = pkg;
 let qrCode;
 const users = {};
 const userMap = {};
+const lastMsg = [];
 let executablePath;
 async function createClient(req, res) {
   const { id } = req.body;
@@ -159,14 +160,18 @@ async function handleMessage(message, usersID, id) {
       message.reply(msg.reply);
     }
   } else {
-    const LateOwl = await replyModel.findOne({
-      message: "late owl",
-      userId: id,
-    });
-    if (LateOwl) {
-      usersID.sendMessage(message.from, LateOwl.reply);
-    } else {
-      usersID.sendMessage(message.from, "please, choose option form list");
+    const flag = lastMsg.find((e) => e == message.from);
+    if (!flag) {
+      lastMsg.push(message.from);
+      const LateOwl = await replyModel.findOne({
+        message: "late owl",
+        userId: id,
+      });
+      if (LateOwl) {
+        usersID.sendMessage(message.from, LateOwl.reply);
+      } else {
+        usersID.sendMessage(message.from, "please, choose option form list");
+      }
     }
   }
 }
