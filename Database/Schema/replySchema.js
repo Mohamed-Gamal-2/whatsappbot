@@ -9,10 +9,12 @@ const replySchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  message: {
-    type: String,
-    required: true,
-  },
+  message: [
+    {
+      type: Object,
+      // required: true,
+    },
+  ],
 });
 
 const replyModel = mongoose.model("Reply", replySchema);

@@ -1,6 +1,4 @@
 import express from "express";
-import multer from "multer";
-import path from "path"
 import { addReply, getAllreplies, updateReply } from "./reply.controller.js";
 import { uploadingMediaMW } from "../../middleware/middleware.upload.js";
 
