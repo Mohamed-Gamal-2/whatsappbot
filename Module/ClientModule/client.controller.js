@@ -1,6 +1,7 @@
 import QRCode from "qrcode";
 import qrcode from "qrcode-terminal";
 import pkg from "whatsapp-web.js";
+import GroupChat from "whatsapp-web.js/src/structures/GroupChat.js";
 import fs from "fs";
 import replyModel from "../../Database/Schema/replySchema.js";
 import clientModel from "../../Database/Schema/clientSchema.js";
@@ -48,8 +49,20 @@ async function createClient(req, res) {
     userId: id,
   });
 
-  users[id].on("message", (message) => {
+  users[id].on("message", async (message) => {
+    if (message._data.id?.participant) return;
+
+    const user = await clientModel.findOne({ userId: id });
     const clientID = message.from;
+
+    const userFlag = user.participant.find((e) => e == clientID);
+
+    if (!userFlag)
+      await clientModel.updateOne(
+        { userId: id },
+        { $push: { participant: clientID } }
+      );
+
     if (!userMap[clientID]) {
       userMap[clientID] = true;
       if (msg) {
@@ -96,11 +109,23 @@ async function restoreSessions() {
     });
 
     users[client.userId].on("message", async (message) => {
+      if (message._data.id?.participant) return;
+
+      const user = await clientModel.findOne({ userId: client.userId });
+      const clientID = message.from;
+
+      const userFlag = user.participant.find((e) => e == clientID);
+
+      if (!userFlag)
+        await clientModel.updateOne(
+          { userId: client.userId },
+          { $push: { participant: clientID } }
+        );
       const msg = await replyModel.findOne({
         message: "early bird",
         userId: client.userId,
       });
-      const clientID = message.from;
+
       if (!userMap[clientID]) {
         userMap[clientID] = true;
         if (msg) {
@@ -218,4 +243,27 @@ async function login(id) {
   console.log(user);
 }
 
-export { createClient, displayQR, restoreSessions };
+async function getNumbers(req, res) {
+  try {
+    const { id } = req.body;
+    const allNumbers = await clientModel.findOne({ userId: id });
+    res.json({ numbers: allNumbers.participant });
+  } catch (err) {}
+}
+
+function getGroupNumbers(req, res) {
+  const { id, groupName } = req.body;
+  users[id].getChats().then((chats) => {
+    const myGroup = chats.find((chat) => chat.name == groupName);
+    const allParticipants = myGroup.participants.map((user) => user.id.user);
+    console.log(allParticipants);
+  });
+}
+
+export {
+  createClient,
+  displayQR,
+  restoreSessions,
+  getNumbers,
+  getGroupNumbers,
+};

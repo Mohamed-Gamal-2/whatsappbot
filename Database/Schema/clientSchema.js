@@ -10,6 +10,7 @@ const clientSchema = new mongoose.Schema({
     type: Boolean,
     required: true,
   },
+  participant: [{ type: String }],
 });
 
 const ClientModel = mongoose.model("Client", clientSchema);
