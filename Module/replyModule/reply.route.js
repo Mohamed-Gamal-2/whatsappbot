@@ -7,6 +7,5 @@ const replyRouter = express.Router();
 replyRouter.post("/add", uploadingMediaMW, addReply);
 replyRouter.patch("/update", updateReply);
 replyRouter.get("/all", getAllreplies);
-// replyRouter.post("/upload", uploadMedia.single("media"), uploadingMedia);
 
 export { replyRouter };

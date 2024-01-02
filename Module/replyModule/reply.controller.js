@@ -4,13 +4,13 @@ import { fileNameinstance as filename } from "../../middleware/middleware.upload
 async function addReply(req, res) {
   try {
     const flag = await replyModel.findOne({
-      reply: req.body.reply,
+      message: req.body.message,
       userId: req.body.userId,
     });
 
     if (flag) {
-      res.json({
-        message: "This reply exists before , write unique reply",
+      res.status(400).json({
+        message: "This message exists before , write unique message",
       });
       return;
     }
@@ -20,7 +20,7 @@ async function addReply(req, res) {
         { ...req.body, message: messagesToInsert },
       ]);
 
-      res.json({ message: "reply added", reply });
+      res.status(201).json({ message: "reply added", reply });
     } else {
       const PDFRegex =
         /\.(PDF|DOCX|DOC|XLS|XLSX|PPT|PPTX|TXT|RTF|ODS|ODP|ODT|CSV)$/i;
@@ -41,11 +41,11 @@ async function addReply(req, res) {
         ]);
         res.status(200).json({ message: "media uploaded" });
       } else {
-        res.json({ message: "media cann't uploaded" });
+        res.status(400).json({ message: "media cann't uploaded" });
       }
     }
   } catch (error) {
-    res.json({ message: "error", error });
+    res.status(400).json({ message: "Add reply failed", error });
   }
 }
 
@@ -54,7 +54,8 @@ async function updateReply(req, res) {
     const { reply, message, userId } = req.body;
 
     if (!message) {
-      res.json({ message: " Enter your message" });
+      res.status(404).json({ message: " Please, Provide a message" });
+      return;
     } else {
       const updatedReply = await replyModel.findOneAndUpdate(
         { message: message.toLowerCase(), userId },
@@ -62,12 +63,12 @@ async function updateReply(req, res) {
         { new: true }
       );
       if (!updatedReply) {
-        res.json({ message: "message not found" });
+        res.status(404).json({ message: "message not found" });
       }
-      res.json({ message: "Reply updated", updatedReply });
+      res.status(200).json({ message: "Reply updated", updatedReply });
     }
   } catch (error) {
-    res.json({ message: "error", error });
+    res.status(400).json({ message: "Update failed", error });
   }
 }
 
@@ -76,12 +77,12 @@ async function getAllreplies(req, res) {
     const { userId } = req.body;
     const allreplies = await replyModel.find({ userId });
     if (allreplies) {
-      res.json({ message: "All replies", allreplies });
+      res.status(200).json({ message: "All replies", allreplies });
     } else {
-      res.json({ message: " No replies founded" });
+      res.status(404).json({ message: " No replies founded" });
     }
   } catch (error) {
-    res.json({ message: "error", error });
+    res.status(400).json({ message: "error", error });
   }
 }
 

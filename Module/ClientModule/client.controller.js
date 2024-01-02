@@ -1,7 +1,6 @@
 import QRCode from "qrcode";
 import qrcode from "qrcode-terminal";
 import pkg from "whatsapp-web.js";
-import GroupChat from "whatsapp-web.js/src/structures/GroupChat.js";
 import fs from "fs";
 import replyModel from "../../Database/Schema/replySchema.js";
 import clientModel from "../../Database/Schema/clientSchema.js";
@@ -22,7 +21,7 @@ async function createClient(req, res) {
     clientModel.insertMany([{ userId: id, isLoggedIn: false }]);
   }
   if (client.isLoggedIn) {
-    res.json({ msg: "user is already logged in " });
+    res.status(400).json({ msg: "user is already logged in " });
     return;
   }
   users[id] = new Client({
@@ -36,12 +35,11 @@ async function createClient(req, res) {
   users[id].on("qr", (qr) => {
     qrCode = qr;
     qrcode.generate(qr, { small: true });
-    res.json({ msg: "Client Created" });
+    res.status(201).json({ msg: "Client Created" });
   });
 
   users[id].on("ready", () => {
     login(id);
-    console.log(`${id}'s Whatsapp Paired!`);
   });
 
   const msg = await replyModel.findOne({
@@ -81,10 +79,9 @@ async function createClient(req, res) {
 
   users[id].on("disconnected", () => {
     try {
-      console.log(`${id}'s Whatsapp disconnect!`);
       logout(id);
     } catch (error) {
-      res.json({ msg: "logout" });
+      res.status(200).json({ msg: "logout" });
     }
   });
 
@@ -95,7 +92,6 @@ async function restoreSessions() {
   executablePath = ChromeLauncher.getChromePath();
   let clients = await clientModel.find({ isLoggedIn: true });
   clients.forEach((client) => {
-    console.log(client);
     users[client.userId] = new Client({
       puppeteer: {
         executablePath: executablePath,
@@ -143,7 +139,6 @@ async function restoreSessions() {
     });
 
     users[client.userId].on("disconnected", () => {
-      console.log(`${client.userId}'s Whatsapp disconnect!`);
       logout(client.userId);
     });
 
@@ -161,7 +156,7 @@ async function handleMessage(message, usersID, id) {
   let headerExtn;
   const msg = await replyModel.findOne({
     userId: id,
-    message: { $in: [message.body.toLowerCase()] },
+    message: message.body.toLowerCase(),
   });
   const PDFRegex =
     /\.(PDF|DOCX|DOC|XLS|XLSX|PPT|PPTX|TXT|RTF|ODS|ODP|ODT|CSV)$/i;
@@ -171,7 +166,6 @@ async function handleMessage(message, usersID, id) {
   if (msg) {
     if (PDFRegex.test(msg.reply)) {
       const extn = msg.reply.split(".").slice(-1)[0];
-      console.log({ extn });
       const dataBuffer = fs.readFileSync(`./media/${msg.reply}`);
       const base64PDF = dataBuffer.toString("base64");
       if (extn.toLowerCase() == "xlsx" || extn.toLowerCase() == "xls") {
@@ -232,7 +226,6 @@ async function logout(id) {
     { isLoggedIn: false },
     { new: true }
   );
-  console.log(user);
 }
 async function login(id) {
   const user = await clientModel.findOneAndUpdate(
@@ -240,24 +233,29 @@ async function login(id) {
     { isLoggedIn: true },
     { new: true }
   );
-  console.log(user);
 }
 
 async function getNumbers(req, res) {
   try {
     const { id } = req.body;
     const allNumbers = await clientModel.findOne({ userId: id });
-    res.json({ numbers: allNumbers.participant });
-  } catch (err) {}
+    res.status(200).json({ numbers: allNumbers.participant });
+  } catch (err) {
+    res.status(400).json({ err });
+  }
 }
 
 function getGroupNumbers(req, res) {
-  const { id, groupName } = req.body;
-  users[id].getChats().then((chats) => {
-    const myGroup = chats.find((chat) => chat.name == groupName);
-    const allParticipants = myGroup.participants.map((user) => user.id.user);
-    console.log(allParticipants);
-  });
+  try {
+    const { id, groupName } = req.body;
+    users[id].getChats().then((chats) => {
+      const myGroup = chats.find((chat) => chat.name == groupName);
+      const allParticipants = myGroup.participants.map((user) => user.id.user);
+      res.status(200).json({ allParticipants });
+    });
+  } catch (err) {
+    res.status(400).json({ err });
+  }
 }
 
 export {

@@ -1,6 +1,6 @@
 import multer from "multer";
 import path from "path";
-import fs from "fs/promises"; // Import fs.promises instead of node:fs/promises
+import fs from "fs/promises";
 import replyModel from "../Database/Schema/replySchema.js";
 
 let fileName;
@@ -25,7 +25,6 @@ const uploadingMediaMW = (req, res, next) => {
         if (fileFounded) {
           const filePath = path.resolve(`./media/${fileName}`);
           await fs.unlink(filePath);
-          console.log("Successfully deleted ");
         }
       } catch (err) {
         console.error("Error deleting file:", err);
@@ -39,7 +38,6 @@ const uploadingMediaMW = (req, res, next) => {
       fileNameinstance = "";
       next();
     }
-    console.log({ fileName });
   });
 };
 export { uploadingMediaMW, fileNameinstance };
